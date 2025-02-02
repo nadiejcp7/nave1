@@ -1,4 +1,3 @@
-# %%
 from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -6,10 +5,14 @@ from fastapi.templating import Jinja2Templates
 import random
 import os
 
-import nest_asyncio
 import uvicorn
 from bs4 import BeautifulSoup
 
+def getFunctionValues(p1, p2):
+    #y = mx +b
+    m = (p2[1]-p1[1])/(p2[0]-p1[0])
+    b = p2[1]-p2[0]*m
+    return m, b
 
 def editHTML(contenido):
     with open("./template/repair_bay.html", "r", encoding="utf-8") as file:
@@ -27,7 +30,12 @@ codes = ["LIFE-03", "ENG-04", "COM-02", "SHLD-05",  "NAV-01"]
 pos = random.randint(0, 4)
 editHTML(codes[pos])
 
-nest_asyncio.apply()
+p1 = [0.00105, 0.05]
+p2 = [0.0035, 10]
+p3 = [30, 0.05]
+
+ml, bl = getFunctionValues(p1, p2)
+mv, bv = getFunctionValues(p3, p2)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="template")
@@ -46,6 +54,15 @@ def get_repair_bay(request: Request):
 def teapot():
     print('entered teapot')
     return Response(content="I'm a teapot", status_code=status.HTTP_418_IM_A_TEAPOT)
+
+@app.get("/phase-change-diagram")
+def get_phase_change_diagram(pressure: float):
+    svl = (pressure - bl)/ml
+    svv = (pressure - bv)/mv
+    return {
+                "specific_volume_liquid": svl,
+                "specific_volume_vapor": svv
+            }
 
 
 link = "0.0.0.0"
